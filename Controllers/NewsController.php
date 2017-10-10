@@ -1,4 +1,5 @@
 <?php
+require_once ROOT.'/Models/News.php';
 
 class NewsController
 {
@@ -9,10 +10,10 @@ class NewsController
 
     public function list()
     {
-        echo "news";
+        echo News::getItemList();
     }
 
-    public function post($id)
+    public function post($id = null)
     {
         echo $id;
     }

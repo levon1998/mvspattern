@@ -10,7 +10,7 @@ class SiteController
 
         $replace = 'year $3, mount $2, day $1';
 
-//        echo preg_replace($pattern, $replace, $string);
+        echo preg_replace($pattern, $replace, $string);
 
     }
 }
