@@ -10,7 +10,7 @@ class App
     public static function start($argv)
     {
         $argv = array_merge($argv, []);
-        $actionList = ['create:migration'];
+        $actionList = ['create:migration', 'help'];
 
         if (isset($argv[1]) && $argv[1]) {
             if (!in_array($argv[1], $actionList)) {
@@ -69,9 +69,33 @@ class App
         echo "migration refresh";
     }
 
-    protected static function help()
+    public static function getInstance()
     {
+        if(self::$instance !== null) {
+            return self::$instance;
+        }
+        self::$instance = new self;
+        return self::$instance;
+    }
 
+    protected static function error($error)
+    {
+        echo "\n" . $error . "\n";
+        die;
+    }
+
+    private function checkMigrationName($name)
+    {
+        if(!preg_match('/^\w+$/',$name)) {
+            self::getInstance()->error("The name of the migration must contain letters, digits and/or underscore characters only");
+        }
+
+    }
+
+    protected static function confirm($question)
+    {
+        echo "\n".$question." [yes,no] \n";
+        return !strncasecmp(trim(fgets(STDIN)),'y',1);
     }
 
     private function getTemplate()
@@ -98,32 +122,27 @@ EOF;
         return $classTemplate;
     }
 
-    private function checkMigrationName($name)
+    protected static function help()
     {
-        if(!preg_match('/^\w+$/',$name)) {
-            self::getInstance()->error("The name of the migration must contain letters, digits and/or underscore characters only");
-        }
+        echo <<<EOF
+        
+USAGE
+    php command.php [action] [parameter]
+	  
+DESCRIPTION
+    This command provides support for database migrations.
+    
+EXAMPLES
+    * php command.php migrate
+      Migrate all tables
+    * php command.php create:migrate
+      Create new migration file (class)
+    * php command.php migrate:refresh
+      Refresh all tables and clear datas
+    * php command.php help
+      Get all commands 
+      
+EOF;
 
-    }
-
-    public static function getInstance()
-    {
-        if(self::$instance !== null) {
-            return self::$instance;
-        }
-        self::$instance = new self;
-        return self::$instance;
-    }
-
-    protected static function error($error)
-    {
-        echo "\n" . $error . "\n";
-        die;
-    }
-
-    protected static function confirm($question)
-    {
-        echo "\n".$question." [yes,no] \n";
-        return !strncasecmp(trim(fgets(STDIN)),'y',1);
     }
 }
