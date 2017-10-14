@@ -14,6 +14,7 @@
 
 //Mysql Connect
     $db = $conf->dbConfigs($configs);
+//    define('DB', $db);
 
 //Router
     $router = new Router();

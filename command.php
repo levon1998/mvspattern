@@ -2,9 +2,8 @@
 define('ROOT', dirname(__FILE__));
 require_once(ROOT.'/Bootstrap/App.php');
 
-$new = new App();
-
-var_dump($new);
+$new = new App;
+$new->start($argv);
 
 //array_shift($argv);
 //if ($argv && isset($argv[0]) && count($argv) > 0) {
