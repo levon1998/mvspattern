@@ -1,16 +1,17 @@
 <?php
-
+require_once(ROOT.'/Vendor/Templates/Template.php');
 class App
 {
     public $migrationTable = 'migrations';
-    public $migrationDirectory = ROOT.'/Database/Migrations/';
-    private $migrationPath = null;
+    private $migrationDirectory = ROOT.'/Database/Migrations/';
+    private $modelDirectory = ROOT.'/Models/';
+    private $controllerDirectory = ROOT.'/Controllers/';
     protected static $instance = null;
 
     public static function start($argv)
     {
         $argv = array_merge($argv, []);
-        $actionList = ['create:migration', 'help'];
+        $actionList = ['create:migration', 'help', 'migrate', 'migrate:refresh', 'create:model', 'create:controller'];
 
         if (isset($argv[1]) && $argv[1]) {
             if (!in_array($argv[1], $actionList)) {
@@ -35,28 +36,30 @@ class App
                 self::getInstance()->migrationCreate($argv);
             break;
             case 'help':
-                self::getInstance()->help();
+                self::getInstance()->getTemplate('Help');
+            break;
+            case 'create:model':
+                self::getInstance()->createModel($argv);
+            break;
+            case 'create:controller':
+                self::getInstance()->createController($argv);
             break;
         }
     }
 
     protected static function migrationCreate($argv)
     {
-        if (!isset($argv[1])) {
-            self::getInstance()->error("Please Enter Migration Name");
-        }
-        self::checkMigrationName($argv[1]);
+        self::getInstance()->checkCommandName($argv, "Migration");
+        self::checkMigrationName($argv[1], "Migration");
         $name = $argv[1];
-        $content = strtr(self::getInstance()->getTemplate(), ['{className}' => $name]);
+        $content = strtr(self::getInstance()->getTemplate("Migration"), ['{className}' => $name]);
         $name= gmdate('ymd_His').'_'.$name;
         $pathInfo = self::getInstance()->migrationDirectory.$name.'.php';
 
         if (self::getInstance()->confirm("Create new migration '$name'?")) {
             file_put_contents($pathInfo,$content);
-            echo "\n . New migration created successfully. \n";
+            echo "\n . New Migration Created Successfully. \n";
         }
-
-        echo "\n" . "Migration Is Created! " . "\n";
     }
 
     protected static function migrationMigrate($argv)
@@ -67,6 +70,33 @@ class App
     protected static function migrationRefresh($argv)
     {
         echo "migration refresh";
+    }
+
+    protected static function createModel($argv)
+    {
+        self::getInstance()->checkCommandName($argv, "Model");
+        self::checkMigrationName($argv[1], "Model");
+        $name = $argv[1];
+        $content = strtr(self::getInstance()->getTemplate('Model'), ['{className}' => $name]);
+        $filePath = self::getInstance()->modelDirectory.$name.'.php';
+
+        if (self::getInstance()->confirm("Create New Model '$name'?")) {
+            file_put_contents($filePath, $content);
+            echo "\n . New Model Created Successfully. \n";
+        }
+    }
+
+    protected static function createController($argv)
+    {
+        self::getInstance()->checkCommandName($argv, "Controller");
+        self::checkMigrationName($argv[1], "Controller");
+        $name = ucfirst($argv[1]).'Controller';
+        $content = strtr(self::getInstance()->getTemplate('Controller'), ['{className}' => $name]);
+        $filePath = self::getInstance()->controllerDirectory.$name.'.php';
+        if (self::getInstance()->confirm("Create New Controller '$name'?")) {
+            file_put_contents($filePath,$content);
+            echo "\n . New Controller Created Successfully. \n";
+        }
     }
 
     public static function getInstance()
@@ -84,12 +114,18 @@ class App
         die;
     }
 
-    private function checkMigrationName($name)
+    private function checkMigrationName($name, $type)
     {
         if(!preg_match('/^\w+$/',$name)) {
-            self::getInstance()->error("The name of the migration must contain letters, digits and/or underscore characters only");
+            self::getInstance()->error("The Name Of The ".$type." Must Contain Letters, Digits And/Or Underscore Characters Only");
         }
+    }
 
+    private function checkCommandName($argv, $type)
+    {
+        if (!isset($argv[1])) {
+            self::getInstance()->error("Please Enter ".$type." Name");
+        }
     }
 
     protected static function confirm($question)
@@ -98,51 +134,14 @@ class App
         return !strncasecmp(trim(fgets(STDIN)),'y',1);
     }
 
-    private function getTemplate()
+    private function getTemplate($type)
     {
-        $classTemplate = <<<EOF
-<?php
-
-require_once(ROOT.'/Components/Migration.php');
-
-class {className} extends Migration
-{
-    public function up()
-    {
-    
-    }
-    
-    public function down()
-    {
-        
-    }
-}
-
-EOF;
-        return $classTemplate;
+        return Template::start($type);
     }
 
     protected static function help()
     {
-        echo <<<EOF
-        
-USAGE
-    php command.php [action] [parameter]
-	  
-DESCRIPTION
-    This command provides support for database migrations.
-    
-EXAMPLES
-    * php command.php migrate
-      Migrate all tables
-    * php command.php create:migrate
-      Create new migration file (class)
-    * php command.php migrate:refresh
-      Refresh all tables and clear datas
-    * php command.php help
-      Get all commands 
-      
-EOF;
+
 
     }
 }
