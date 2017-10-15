@@ -1,8 +1,10 @@
 <?php
 require_once(ROOT.'/Vendor/Templates/Template.php');
+require_once(ROOT.'/Bootstrap/Query.php');
 class App
 {
     public $migrationTable = 'migrations';
+    private $db = null;
     private $migrationDirectory = ROOT.'/Database/Migrations/';
     private $modelDirectory = ROOT.'/Models/';
     private $controllerDirectory = ROOT.'/Controllers/';
@@ -64,7 +66,7 @@ class App
 
     protected static function migrationMigrate($argv)
     {
-        echo "migration";
+        self::getInstance()->getMigrations();
     }
 
     protected static function migrationRefresh($argv)
@@ -139,9 +141,46 @@ class App
         return Template::start($type);
     }
 
-    protected static function help()
+    protected static function getMigrations()
     {
+        self::getInstance()->getMigrationHistory();
+        $migrations = [];
+        if (is_dir(self::getInstance()->migrationDirectory)) {
+            $files = opendir(self::getInstance()->migrationDirectory);
+            while (($file = readdir($files)) !== false) {
+                if ($file == '.' || $file == '..') {
+                    continue;
+                }
+                $migrations[] = $file;
+//                $path=self::getInstance()->migrationDirectory.$file;
+//                if(preg_match('/^(m(\d{6}_\d{6})_.*?)\.php$/',$file,$matches) && is_file($path) && !isset($applied[$matches[2]]))  {
+//                    $migrations[] = $matches[1];
+//                }
+            }
+            closedir($files);
+        }
+        sort($migrations);
+        return $migrations;
 
+    }
 
+    protected static function getMigrationHistory()
+    {
+        self::getInstance()->db = new Query();
+        if (!self::getInstance()->db->getTable(self::getInstance()->migrationTable)) {
+            self::getInstance()->createHistoryTable();
+        }
+
+    }
+
+    protected static function createHistoryTable()
+    {
+        echo "\n".'Creating migration history table "'.self::getInstance()->migrationTable.'"...'. "\n";
+        $sql = "CREATE TABLE IF NOT EXISTS `".self::getInstance()->migrationTable."`(
+            `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            `name` varchar(190) NOT NULL,
+            `active` int DEFAULT 1
+        ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;";
+        $result = self::getInstance()->db->queryToDb($sql);
     }
 }
