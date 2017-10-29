@@ -1,32 +1,36 @@
 <?php
+
 require_once(ROOT.'/Components/Migration.php');
 require_once(ROOT . '/Bootstrap/TableOrm.php');
 
-class create_users_table extends Migration
+class users extends Migration
 {
     public function up()
     {
-        return TableOrm::create('barev', [
+        return TableOrm::create('users', [
             [
                 'name' => 'id',
                 'type' => 'int',
-                'increment' => true,
                 'unsigned' => true,
-                'nullabel' => false,
+                'increment' => true,
                 'primary_key' => true
             ],
             [
-                'name' => 'haziv',
+                'name' => 'first_name',
+                'nullabel' => false,
                 'type' => 'varchar',
-                'length' => 160,
-                'nullabel' => true,
-                'default' => 1
+                'length' => 255
             ],
             [
-                'name' => 'haziv2',
+                'name' => 'last_name',
+                'nullabel' => true,
                 'type' => 'varchar',
-                'length' => '255',
-                'nullabel' => false
+                'length' => 255
+            ],
+            [
+                'name' => 'active',
+                'nullabel' => false,
+                'type' => 'tinyint',
             ]
         ]);
     }

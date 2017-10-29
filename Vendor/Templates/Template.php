@@ -27,6 +27,7 @@ class Template
 <?php
 
 require_once(ROOT.'/Components/Migration.php');
+require_once(ROOT . '/Bootstrap/TableOrm.php');
 
 class {className} extends Migration
 {

@@ -1,6 +1,6 @@
 <?php
 
-class Query
+class Query extends App
 {
     private $db = null;
     public function __construct()
@@ -31,9 +31,47 @@ class Query
         return (isset($tables[$name])) ? true : false;
     }
 
-    public function insert()
+    public function findAll($table)
     {
+        if ($table) {
+            $sql = 'SELECT * FROM '.$table;
+            return $this->queryToDb($sql);
+        } else {
+            self::getInstance()->error("Table name is incorrect!");
+        }
+    }
 
+    public function insert($table, $data = null)
+    {
+        if ($table || $data) {
+            $db = $this->db;
+            $column = [];
+            $placeHolders = [];
+            if ($data && count($data) > 0) {
+                foreach ($data as $value) {
+                    foreach ($value as $key => $item) {
+                        $column[] = "`".$key."`";
+                        $placeHolders[] = ":$key";
+                    }
+                }
+                $column = array_unique($column);
+                $placeHolders = array_unique($placeHolders);
+
+                $column       = implode(', ', $column);
+                $placeHolders = implode(', ', $placeHolders);
+
+                $sql = "INSERT INTO `".$table."` ($column) VALUES ($placeHolders);";
+                $query = $db->prepare($sql);
+                foreach ($data as $value) {
+                    foreach ($value as $key => $item) {
+                        $query->bindValue(":$key", $item);
+                    }
+                }
+                return $query->execute();
+            }
+        } else {
+            self::getInstance()->error("Invalid data !");
+        }
     }
 
     protected function delete()
@@ -76,16 +114,19 @@ class Query
 
     }
 
+    public function where()
+    {
+
+    }
+
     public function queryToDb($sql)
     {
-        sleep(1);
         $db = $this->db;
-        if ($db->query("$sql")) {
-            echo "Table 'migrations' is created successfull! \n";
-        } else {
-            return "Table migration is not creating \n";
+        try {
+            $result = $db->query($sql);
+            return $result;
+        }catch (Exception $e) {
+            self::getInstance()->error($e);
         }
-
-
     }
 }

@@ -19,7 +19,6 @@ class Configs
         $dbName = $configs['DB_NAME'];
         $dbUser = $configs['DB_USER'];
         $dbPass = $configs['DB_PASS'];
-
         try{
             $newConnection = new PDO("$dbType:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
         } catch (PDOException $e) {

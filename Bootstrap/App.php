@@ -66,7 +66,38 @@ class App
 
     protected static function migrationMigrate($argv)
     {
-        self::getInstance()->getMigrations();
+        $migrations = self::getInstance()->getMigrations();
+        $table = self::getInstance()->migrationTable;
+        $total=count($migrations);
+        if(count($total) > 0) {
+            echo "\n Total $total new ".($total===1 ? 'migration':'migrations')." to be applied:\n";
+        }
+        foreach ($migrations as $migration) {
+                echo $migration['name']."\n";
+        }
+        echo "\n";
+        $i = 0;
+        foreach($migrations as $migration) {
+            if(self::getInstance()->migrate($migration['name'])===false) {
+                $i++;
+                echo "\nMigration failed. All later migrations are canceled.\n";
+                return;
+            }
+        }
+        if ($i == 0) {
+            echo "Migrated up successfully.\n";
+            self::getInstance()->db->insert($table, $migrations);
+        }
+    }
+
+    protected static function migrate($class)
+    {
+        $migration = self::getInstance()->getMigrationClass($class);
+        if($migration->up()) {
+            self::getInstance()->db->queryToDb($migration->up());
+        } else {
+            return false;
+        }
     }
 
     protected static function migrationRefresh($argv)
@@ -141,9 +172,18 @@ class App
         return Template::start($type);
     }
 
+    protected static function getMigrationClass($name)
+    {
+        $file = self::getInstance()->migrationDirectory.$name;
+        require_once($file);
+        $name = str_replace('.php', '',substr($name, 14));
+        $migration = new $name;
+        return $migration;
+    }
+
     protected static function getMigrations()
     {
-        self::getInstance()->getMigrationHistory();
+        $rowsMigration = self::getInstance()->getMigrationHistory();
         $migrations = [];
         if (is_dir(self::getInstance()->migrationDirectory)) {
             $files = opendir(self::getInstance()->migrationDirectory);
@@ -151,11 +191,12 @@ class App
                 if ($file == '.' || $file == '..') {
                     continue;
                 }
-                $migrations[] = $file;
-//                $path=self::getInstance()->migrationDirectory.$file;
-//                if(preg_match('/^(m(\d{6}_\d{6})_.*?)\.php$/',$file,$matches) && is_file($path) && !isset($applied[$matches[2]]))  {
-//                    $migrations[] = $matches[1];
-//                }
+                if (!isset($rowsMigration[$file])) {
+                    $migrations[] = [
+                        'name' => $file,
+                        'active' => 1
+                    ];
+                }
             }
             closedir($files);
         }
@@ -170,7 +211,12 @@ class App
         if (!self::getInstance()->db->getTable(self::getInstance()->migrationTable)) {
             self::getInstance()->createHistoryTable();
         }
-
+        $rows = self::getInstance()->db->findAll(self::getInstance()->migrationTable);
+        $migrations = [];
+        foreach ($rows as $row) {
+            $migrations[$row['name']] = $row['id'];
+        }
+        return $migrations;
     }
 
     protected static function createHistoryTable()
