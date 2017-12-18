@@ -8,7 +8,8 @@ class create_users_table extends Migration
     {
         return TableOrm::create('barev')
             ->increment("id")
-            ->string("name", true)
+            ->string("name", ['length' => 191, 'null' => true, 'default' => 'llll'])
+            ->text("description", ['null' => false])
             ->make();
     }
     

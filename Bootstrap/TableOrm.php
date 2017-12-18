@@ -19,7 +19,7 @@ class TableOrm extends App
     public static function create($name)
     {
         if (self::checkName($name)) {
-            self::$tableQuery .= "CREATE TABLE $name ( ";
+            self::$tableQuery .= "CREATE TABLE $name (";
             return new self();
         } else {
             return false;
@@ -47,17 +47,19 @@ class TableOrm extends App
 
     public function intager($name, $lenght, $increment = false, $unsigned = false, $primary = false)
     {
+
         if (self::checkName($name)) {
-            $string = "$name INT($lenght) ";
+            $string = " $name INT($lenght)";
             if ($unsigned) {
-                $string .= "UNSIGNED ";
+                $string .= " UNSIGNED";
             }
             if ($increment) {
-                $string .= "AUTO_INCREMENT ";
+                $string .= " AUTO_INCREMENT";
             }
             if ($primary) {
-                $string .= "PRIMARY KEY ";
+                $string .= " PRIMARY KEY";
             }
+
             self::$tableQuery .= $string.",";
             return new self();
         } else {
@@ -65,19 +67,35 @@ class TableOrm extends App
         }
     }
 
-    public function string($name, $null = true, $lenght = 191)
+    public function string($name, $params = [])
     {
         if (self::checkName($name)) {
-            $string = "$name VARCHAR($lenght) ";
+            $data = self::retrunParams($params);
+            $lenght = $data['lenght'];
+            $null = $data['null'];
+            $default = $data['default'];
+            $string = " $name VARCHAR($lenght)";
             if ($null) {
-                $string .= 'NULL ';
+                $string .= ' NULL';
             } else {
-                $string .= 'NOT NULL ';
+                $string .= ' NOT NULL';
+            }
+            if ($default) {
+                $string .= " DEFAULT '$default'";
             }
             self::$tableQuery .= $string;
             return new self();
         } else {
             return false;
+        }
+    }
+
+    public function text($name, $params)
+    {
+        if (self::checkName($name) && count($params) > 0) {
+            $data = self::retrunParams($params, true);
+            $null = $data['null'];
+            $default = $data['default'];
         }
     }
 
@@ -99,56 +117,21 @@ class TableOrm extends App
         }
     }
 
-    private static function validationForFields($param)
+    private static function retrunParams($params, $text = false)
     {
-        $allowMetods = ['name', 'type', 'length', 'increment', 'unsigned', 'nullabel', 'default', 'primary_key'];
-        if ($param) {
-            foreach ($param as $key => $val) {
-                if (!in_array($key, $allowMetods)) {
-                    self::error("Table have an invalid parameter");
-                }
-                if (!self::checkTypeFields($key, $val)) {
-                    self::error("Table Field value is not currect");
-                }
-            }
-        } else {
-            self::error("Table have not a parameter");
+        $data['lenght'] = (!$text) ? 191 : 0;
+        $data['null'] = false;
+        $data['default'] = false;
+        if (!$text && isset($params['lenght']) && (int)$params['lenght'] > 0) {
+            $data['lenght'] = (int)$params['lenght'];
         }
-        return true;
-
-    }
-
-    private static function checkTypeFields($type, $value)
-    {
-        $allowBoolean = [true, false];
-        $allowTypes = ['TINYINT','SMALLINT','MEDIUMINT','INT', 'BIGINT', 'FLOAT', 'DOUBLE', 'DATETIME', 'DATE', 'TIMESTAMP', 'CHAR', 'VARCHAR', 'BLOB', 'TEXT', 'ENUM'];
-        $value = strtoupper($value);
-        switch ($type) {
-            case 'name':
-                return (self::checkName($value)) ? true : false;
-            break;
-            case 'type':
-                return (in_array($value, $allowTypes)) ? true : false;
-            break;
-            case 'increment':
-                return (in_array($value, $allowBoolean)) ? true : false;
-            break;
-            case 'unsigned':
-                return (in_array($value, $allowBoolean)) ? true : false;
-            break;
-            case 'nullabel':
-                return (in_array($value, $allowBoolean)) ? true : false;
-            break;
-            case 'length':
-                return ((int)$value > 0) ? true : false;
-            break;
-            case 'primary_key':
-                return (in_array($value, $allowBoolean)) ? true : false;
-            break;
-            case 'default':
-                return true;
-            break;
+        if (isset($params['null']) && (bool)$params['null'] === true) {
+            $data['null'] = true;
         }
+        if (isset($params['default']) && (string)$params['default']) {
+            $data['default'] = (string)$params['default'];
+        }
+        return $data;
     }
 
     private static function checkName($name)
