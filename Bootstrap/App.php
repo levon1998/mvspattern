@@ -17,10 +17,10 @@ class App
 
         if (isset($argv[1]) && $argv[1]) {
             if (!in_array($argv[1], $actionList)) {
-                self::getInstance()->error("Not Current Command. Run the command.php help");
+                self::getInstance()->error("Not Current Command. Run the command help");
             }
         }
-        if (isset($argv[0]) && $argv[0] == 'command.php') {
+        if (isset($argv[0]) && $argv[0] == 'command') {
             unset($argv[0]);
         }
         $argv = array_merge($argv, []);
@@ -73,15 +73,15 @@ class App
             echo "\n Total $total new ".($total===1 ? 'migration':'migrations')." to be applied:\n";
         }
         foreach ($migrations as $migration) {
-                echo $migration['name']."\n";
+            echo $migration['name']."\n";
         }
         echo "\n";
         $i = 0;
         foreach($migrations as $migration) {
             if(self::getInstance()->migrate($migration['name'])===false) {
                 $i++;
-                echo "\nMigration failed. All later migrations are canceled.\n";
-                return;
+//                echo "\nMigration failed. All later migrations are canceled.\n";
+//                return;
             }
         }
         if ($i == 0) {

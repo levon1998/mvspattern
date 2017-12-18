@@ -1,26 +1,94 @@
 <?php
 
-class TableOrm
+class TableOrm extends App
 {
     public $table;
-    public $db;
+    protected static $tableQuery = '';
     protected $columns = [];
     protected $operation = [];
 
-    public function __construct($table)
+    private $db = null;
+    public function __construct()
     {
-        $this->table = $table;
+        $configs = require(ROOT.'/Conf.php');
+        require_once (ROOT.'/Components/Configs.php');
+        $conf = new Configs();
+        $this->db = $conf->dbConfigs($configs);
     }
 
-    public static function create($name, $params)
+    public static function create($name)
     {
         if (self::checkName($name)) {
-            return self::checkColumns($name, $params);
+            self::$tableQuery .= "CREATE TABLE $name ( ";
+            return new self();
         } else {
             return false;
         }
     }
 
+    public function increment($name, $lenght = 11)
+    {
+        if (self::checkName($name)) {
+            return $this->unsigned($name, $lenght, true);
+        } else {
+            return false;
+        }
+    }
+
+    private function unsigned($name, $lenght, $increment)
+    {
+        return $this->primary($name, $lenght, $increment, true);
+    }
+
+    protected function primary($name, $lenght, $increment, $unsigned)
+    {
+        return $this->intager($name, $lenght, $increment, $unsigned, true);
+    }
+
+    public function intager($name, $lenght, $increment = false, $unsigned = false, $primary = false)
+    {
+        if (self::checkName($name)) {
+            $string = "$name INT($lenght) ";
+            if ($unsigned) {
+                $string .= "UNSIGNED ";
+            }
+            if ($increment) {
+                $string .= "AUTO_INCREMENT ";
+            }
+            if ($primary) {
+                $string .= "PRIMARY KEY ";
+            }
+            self::$tableQuery .= $string.",";
+            return new self();
+        } else {
+            return false;
+        }
+    }
+
+    public function string($name, $null = true, $lenght = 191)
+    {
+        if (self::checkName($name)) {
+            $string = "$name VARCHAR($lenght) ";
+            if ($null) {
+                $string .= 'NULL ';
+            } else {
+                $string .= 'NOT NULL ';
+            }
+            self::$tableQuery .= $string;
+            return new self();
+        } else {
+            return false;
+        }
+    }
+
+    public function make()
+    {
+        $query = self::$tableQuery . ");";
+        if ($this->queryToDb($query))
+        {
+            return true;
+        }
+    }
 
     private static function checkColumns($name, $params)
     {
@@ -29,50 +97,6 @@ class TableOrm
         } else {
             self::error("The table fields is not found");
         }
-    }
-
-    private function getColumns($name, $params)
-    {
-        $i = 0;
-        $sql = "CREATE TABLE $name (";
-        foreach ($params as $param) {
-            self::validationForFields($param);
-            if (isset($param['name']) && $param['name']) {
-                $sql .= ($i == 0) ? '' : ', ';
-                $sql .= $param['name'];
-            }
-            if (isset($param['type']) && $param['type']) {
-                $sql .= ' '. $param['type'];
-                if (isset($param['length']) && (int)$param['length'] > 0) {
-                    $sql .= "(".$param['length'].")";
-                } else {
-                    $sql .= "(11)";
-                }
-            }
-            if (isset($param['increment']) && $param['increment']) {
-                if (isset($param['unsigned']) && (bool)$param['unsigned']) {
-                    $sql .= ' UNSIGNED AUTO_INCREMENT';
-                } else {
-                    $sql .= ' AUTO_INCREMENT';
-                }
-            }
-            if (isset($param['nullabel'])) {
-                if ($param['nullabel']) {
-                    $sql .= ' NULL';
-                } else {
-                    $sql .= ' NOT NULL';
-                }
-            }
-            if (isset($param['primary_key']) && $param['primary_key']) {
-                $sql .= ' PRIMARY KEY';
-            }
-            if (isset($param['default']) && $param['default']) {
-                $sql .= ' DEFAULT '. $param['default'];
-            }
-            $i++;
-        }
-        $sql .= ");";
-        return $sql;
     }
 
     private static function validationForFields($param)
@@ -142,6 +166,17 @@ class TableOrm
     private function getCommands()
     {
         return $this->operation;
+    }
+
+    public function queryToDb($sql)
+    {
+        $db = $this->db;
+        try {
+            $result = $db->query($sql);
+            return $result;
+        }catch (Exception $e) {
+            self::getInstance()->error($e);
+        }
     }
 
     public static function error($error)

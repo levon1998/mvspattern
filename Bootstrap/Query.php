@@ -5,7 +5,7 @@ class Query extends App
     private $db = null;
     public function __construct()
     {
-        $configs = require_once(ROOT.'/Conf.php');
+        $configs = require(ROOT.'/Conf.php');
         require_once (ROOT.'/Components/Configs.php');
 
         $conf = new Configs();

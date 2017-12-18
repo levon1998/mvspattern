@@ -51,23 +51,23 @@ EOF;
         echo <<<EOF
         
 USAGE
-    php command.php [action] [parameter]
+    php command [action] [parameter]
 	  
 DESCRIPTION
     This command provides support for database migrations.
     
 EXAMPLES
-    * php command.php migrate
+    * php command migrate
       Migrate all tables
-    * php command.php create:migrate [name]
+    * php command create:migrate [name]
       Create new migration file (class)
-    * php command.php migrate:refresh
+    * php command migrate:refresh
       Refresh all tables and clear datas
-    * php command.php help
+    * php command help
       Get all commands 
-    * php command.php create:model [name]
+    * php command create:model [name]
       Create new model file (class)
-    * php command.php create:controller [name]
+    * php command create:controller [name]
       Create new controller file (Controller)
       
 EOF;
